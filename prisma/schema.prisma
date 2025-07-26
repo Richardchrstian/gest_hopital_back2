@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model comptables {
+  id_comptable    Int      @id @default(autoincrement())
+  nom             String   @db.VarChar(255)
+  email           String   @unique(map: "email") @db.VarChar(255)
+  mot_de_passe    String   @db.VarChar(255)
+  id_hopital      Int
+  profile_picture String?  @db.VarChar(255)
+  prenom          String?  @db.VarChar(255)
+  telephone       String?  @db.VarChar(20)
+  pays_id         Int?
+  ville_id        Int?
+  hopitaux        hopitaux @relation(fields: [id_hopital], references: [id_hopital], onDelete: Cascade, onUpdate: Restrict, map: "comptables_ibfk_1")
+  pays            pays?    @relation(fields: [pays_id], references: [id_pays], onUpdate: Restrict, map: "comptables_pays_id_foreign_idx")
+  ville           ville?   @relation(fields: [ville_id], references: [id_ville], onUpdate: Restrict, map: "comptables_ville_id_foreign_idx")
+
+  @@index([pays_id], map: "comptables_pays_id_foreign_idx")
+  @@index([ville_id], map: "comptables_ville_id_foreign_idx")
+  @@index([id_hopital], map: "id_hopital")
+}
+
+model directeurs {
+  id_directeur    Int     @id @default(autoincrement())
+  nom             String  @db.VarChar(255)
+  email           String  @unique(map: "email") @db.VarChar(255)
+  mot_de_passe    String  @db.VarChar(255)
+  profile_picture String? @db.VarChar(255)
+  prenom          String? @db.VarChar(255)
+  telephone       String? @db.VarChar(20)
+  pays_id         Int?
+  ville_id        Int?
+  pays            pays?   @relation(fields: [pays_id], references: [id_pays], onUpdate: Restrict, map: "directeurs_pays_id_foreign_idx")
+  ville           ville?  @relation(fields: [ville_id], references: [id_ville], onUpdate: Restrict, map: "directeurs_ville_id_foreign_idx")
+
+  @@index([pays_id], map: "directeurs_pays_id_foreign_idx")
+  @@index([ville_id], map: "directeurs_ville_id_foreign_idx")
+}
+
+model hopitaux {
+  id_hopital        Int             @id @default(autoincrement())
+  nom               String          @db.VarChar(255)
+  adresse           String          @db.VarChar(255)
+  telephone         String          @db.VarChar(20)
+  email             String          @unique(map: "email") @db.VarChar(255)
+  mot_de_passe      String          @db.VarChar(255)
+  profile_picture   String?         @db.VarChar(255)
+  pays_id           Int?
+  ville_id          Int?
+  registration_date DateTime        @default(now()) @db.Timestamp(0)
+  statut            hopitaux_statut @default(actif)
+  comptables        comptables[]
+  pays              pays?           @relation(fields: [pays_id], references: [id_pays], onUpdate: Restrict, map: "hopitaux_pays_id_foreign_idx")
+  ville             ville?          @relation(fields: [ville_id], references: [id_ville], onUpdate: Restrict, map: "hopitaux_ville_id_foreign_idx")
+
+  @@index([pays_id], map: "hopitaux_pays_id_foreign_idx")
+  @@index([ville_id], map: "hopitaux_ville_id_foreign_idx")
+}
+
+model pays {
+  id_pays    Int          @id @default(autoincrement())
+  nom_pays   String       @unique(map: "nom_pays") @db.VarChar(255)
+  comptables comptables[]
+  directeurs directeurs[]
+  hopitaux   hopitaux[]
+  ville      ville[]
+}
+
+model sequelizemeta {
+  name String @id @unique(map: "name") @db.VarChar(255)
+}
+
+model ville {
+  id_ville   Int          @id @default(autoincrement())
+  nom_ville  String       @db.VarChar(255)
+  id_pays    Int
+  comptables comptables[]
+  directeurs directeurs[]
+  hopitaux   hopitaux[]
+  pays       pays         @relation(fields: [id_pays], references: [id_pays], onDelete: Cascade, onUpdate: Restrict, map: "ville_ibfk_1")
+
+  @@index([id_pays], map: "id_pays")
+}
+
+enum hopitaux_statut {
+  actif
+  archiv_ @map("archivé")
+}
